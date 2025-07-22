@@ -1,6 +1,5 @@
 package com.banking.userservice.dto;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 public class UserRegistrationDto {
@@ -19,6 +18,9 @@ public class UserRegistrationDto {
 
     @NotBlank(message = "Last name cannot be blank")
     private String lastName;
+
+    // Default constructor (required for JSON deserialization)
+    public UserRegistrationDto() {}
 
     public UserRegistrationDto(String username, String password, String lastName, String email, String firstName) {
         this.username = username;
