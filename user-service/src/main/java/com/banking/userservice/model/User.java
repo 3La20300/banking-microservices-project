@@ -11,39 +11,46 @@ import java.util.UUID;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID userId;
+    @Column(name = "id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID id;
 
     @NotBlank
-    @Column(unique = true)
+    @Column(unique = true, nullable = false, length = 50)
     private String username;
 
     @NotBlank
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
 
     @Email
-    @Column(unique = true)
+    @Column(unique = true, nullable = false, length = 100)
     private String email;
 
     @NotBlank
+    @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
     @NotBlank
+    @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public User ()
-    {
+    @PrePersist
+    protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
 
-    public UUID getUserId() {
-        return userId;
+
+    public User() {}
+
+    public UUID getId() {
+        return id;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getUsername() {

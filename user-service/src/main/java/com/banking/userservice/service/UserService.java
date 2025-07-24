@@ -1,14 +1,19 @@
 package com.banking.userservice.service;
 
-import com.banking.userservice.dto.*;
-import com.banking.userservice.exception.*;
-import java.util.UUID;
+import com.banking.userservice.dto.UserLoginDto;
+import com.banking.userservice.dto.UserRegistrationDto;
+import com.banking.userservice.dto.UserResponseDto;
+import com.banking.userservice.exception.InvalidCredentialsException;
+import com.banking.userservice.exception.UserAlreadyExistsException;
+import com.banking.userservice.exception.UserNotFoundException;
 import com.banking.userservice.model.User;
 import com.banking.userservice.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -41,7 +46,7 @@ public class UserService {
         User savedUser = userRepository.save(user);
 
         // Return success response
-        return new UserResponseDto(savedUser.getUserId(), savedUser.getUsername(), "User registered successfully.");
+        return new UserResponseDto(savedUser.getId(), savedUser.getUsername(), "User registered successfully.");
     }
 
     public UserResponseDto loginUser(UserLoginDto userLoginDto) {
@@ -55,7 +60,7 @@ public class UserService {
         }
 
         // Return success response
-        return new UserResponseDto(user.getUserId(), user.getUsername());
+        return new UserResponseDto(user.getId(), user.getUsername());
     }
 
     public UserResponseDto getUserById(UUID userId) {
@@ -65,7 +70,7 @@ public class UserService {
 
         // Return user profile response
         return new UserResponseDto(
-                user.getUserId(),
+                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFirstName(),
