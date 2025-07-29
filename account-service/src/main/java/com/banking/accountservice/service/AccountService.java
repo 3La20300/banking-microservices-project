@@ -4,6 +4,7 @@ import com.banking.accountservice.dto.AccountCreationDto;
 import com.banking.accountservice.dto.AccountResponseDto;
 import com.banking.accountservice.exception.AccountNotFoundException;
 import com.banking.accountservice.exception.InvalidAccountDataException;
+import com.banking.accountservice.exception.NoAccountsForUserId;
 import com.banking.accountservice.model.Account;
 import com.banking.accountservice.repository.AccountRepository;
 import jakarta.transaction.Transactional;
@@ -33,11 +34,17 @@ public class AccountService {
         //0 if it is equal to 0
         //
         //1 if it is greater than 0
-        if (accountCreationDto.getIntialBalance().compareTo(BigDecimal.ZERO) < 0) {
+        if (accountCreationDto.getInitialBalance().compareTo(BigDecimal.ZERO) < 0) {
             throw new InvalidAccountDataException("Initial balance cannot be negative.");
         }
+        // Validate account type
+        if (accountCreationDto.getAccountType() == null ||
+            !(accountCreationDto.getAccountType() == Account.AccountType.SAVINGS ||
+              accountCreationDto.getAccountType() == Account.AccountType.CHECKING)) {
+            throw new com.banking.accountservice.exception.InvalidAccountTypeException("Invalid account type. Allowed values: SAVINGS, CHECKING.");
+        }
         Account account= new Account();
-        account.setUser_id(accountCreationDto.getUserId());
+        account.setUserId(accountCreationDto.getUserId());
         account.setAccountType(accountCreationDto.getAccountType());
         //Account Number is Generated
         String accountNumber;
@@ -46,7 +53,7 @@ public class AccountService {
         } while (accountRepository.findByAccountNumber(accountNumber).isPresent());
 
         account.setAccountNumber(accountNumber);
-        account.setBalance(accountCreationDto.getIntialBalance());
+        account.setBalance(accountCreationDto.getInitialBalance());
         account.setStatus(Account.AccountStatus.ACTIVE);
 
         Account savedAccount = accountRepository.save(account);
@@ -63,7 +70,7 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account Not Found"));
         return new AccountResponseDto(
                 account.getAccountId(),
-                account.getUser_id(),
+                account.getUserId(),
                 account.getAccountNumber(),
                 account.getAccountType(),
                 account.getBalance(),
@@ -75,6 +82,9 @@ public class AccountService {
     //3: Get all accounts for a user
     public List<AccountResponseDto> getAccountsByUserId(UUID userId) {
         List<Account> accounts = accountRepository.findByUserId(userId);
+        if (accounts.isEmpty()) {
+            throw new NoAccountsForUserId("No accounts found for user ID : " + userId);
+        }
         return accounts.stream()
                 .map(acc -> new AccountResponseDto(
                         acc.getAccountId(),

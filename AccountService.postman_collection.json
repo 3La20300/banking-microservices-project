@@ -1,0 +1,62 @@
+{
+  "info": {
+    "name": "Account Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "APP-NAME", "value": "PORTAL" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"a1b2c3d4-e5f6-7890-1234-567890abcdef\",\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 100.00\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8082/accounts",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["accounts"]
+        }
+      }
+    },
+    {
+      "name": "Get Account Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "APP-NAME", "value": "PORTAL" }
+        ],
+        "url": {
+          "raw": "http://localhost:8082/accounts/{{accountId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["accounts", "{{accountId}}"]
+        }
+      }
+    },
+    {
+      "name": "List User Accounts",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "APP-NAME", "value": "PORTAL" }
+        ],
+        "url": {
+          "raw": "http://localhost:8082/accounts/user/{userId}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8082",
+          "path": ["users", "{{userId}}", "accounts"]
+        }
+      }
+    }
+  ]
+}
+

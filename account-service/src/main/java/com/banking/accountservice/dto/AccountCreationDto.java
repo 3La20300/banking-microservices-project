@@ -1,7 +1,6 @@
 package com.banking.accountservice.dto;
 
 import com.banking.accountservice.model.Account;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -11,10 +10,10 @@ public class AccountCreationDto {
     @NotNull(message = "UserId cannot be blank")
     private UUID userId;
 
-    @NotBlank(message = "Account Type cannot be empty")
+    @NotNull(message = "Account Type cannot be empty")
     private Account.AccountType accountType;
 
-    @NotBlank(message = "Initial Balance cannot be empty")
+    @NotNull(message = "Initial Balance cannot be empty")
     private BigDecimal initialBalance;
 
     public AccountCreationDto() {}
@@ -41,11 +40,11 @@ public class AccountCreationDto {
         this.accountType = accountType;
     }
 
-    public BigDecimal getIntialBalance() {
+    public BigDecimal getInitialBalance() {
         return initialBalance;
     }
 
-    public void setIntialBalance(BigDecimal intialBalance) {
+    public void setInitialBalance(BigDecimal intialBalance) {
         this.initialBalance = intialBalance;
     }
 }

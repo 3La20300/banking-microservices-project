@@ -13,27 +13,27 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/")
 public class AccountController {
     @Autowired
     AccountService accountService;
 
     //1. Create a new Account
-    @PostMapping
+    @PostMapping("/accounts")
     public ResponseEntity<AccountResponseDto> createAccount(@RequestBody AccountCreationDto account) {
         AccountResponseDto response =accountService.createAccount(account);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     //2. Get account By ID
-    @GetMapping("/{accountId")
+    @GetMapping("/{accountId}")
     public ResponseEntity<AccountResponseDto> getAccountById(@PathVariable UUID accountId) {
         AccountResponseDto response =accountService.getAccountById(accountId);
         return ResponseEntity.ok(response);
     }
 
     //3. Get All Account for a User
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user/{userId}/accounts")
     public ResponseEntity<List<AccountResponseDto>> getAccountByUserId(@PathVariable UUID userId) {
         List<AccountResponseDto> response =accountService.getAccountsByUserId(userId);
         return ResponseEntity.ok(response);

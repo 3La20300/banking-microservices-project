@@ -15,6 +15,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(NoAccountsForUserId.class)
+    public ResponseEntity<ErrorResponseDto> handleNoAccountsForUserId(NoAccountsForUserId e) {
+        ErrorResponseDto error = new ErrorResponseDto(404, "Not Found", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
 
     @ExceptionHandler(InvalidAccountTypeException.class)
     public ResponseEntity<ErrorResponseDto> handleInvalidAccountType(InvalidAccountTypeException e) {
@@ -28,9 +34,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGenericException(Exception e) {
         ErrorResponseDto error = new ErrorResponseDto(500, "Internal Server Error", "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
 }

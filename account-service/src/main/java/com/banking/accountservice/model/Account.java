@@ -16,8 +16,8 @@ public class Account {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID accountId;
 
-    @Column(name="userId")
-    private UUID user_id;
+    @Column(name="user_id")
+    private UUID userId;
 
     @NotBlank
     @Column(unique = true, nullable = false, length = 20)
@@ -67,12 +67,12 @@ public class Account {
 
     public Account(){}
 
-    public UUID getUser_id() {
-        return user_id;
+    public UUID getUserId() {
+        return userId;
     }
 
-    public void setUser_id(UUID user_id) {
-        this.user_id = user_id;
+    public void setUserId(UUID user_id) {
+        this.userId = user_id;
     }
 
     public UUID getAccountId() {

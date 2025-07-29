@@ -24,6 +24,7 @@ public class LogMessageDto {
         this.message = message;
         this.messageType = messageType;
         this.serviceName = serviceName;
+        this.dateTime = LocalDateTime.now();
         this.endpoint = endpoint;
         this.method = method;
     }
