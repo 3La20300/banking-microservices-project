@@ -1,0 +1,1216 @@
+							"bearer": [
+								{
+									"key": "token",
+									"value": "invalid_token_value",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{gateway_url}}/dashboard/{{user_id}}",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"dashboard",
+								"{{user_id}}"
+							]
+						},
+						"description": "Tests API Gateway behavior with an invalid token."
+					},
+					"response": []
+				},
+				{
+					"name": "Missing Required Fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response contains validation error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error || jsonData.message).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fromAccountId\": \"{{source_account_id}}\"\n  // Missing required fields\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/transactions/transfer/initiation",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"transactions",
+								"transfer",
+								"initiation"
+							]
+						},
+						"description": "Tests API Gateway behavior when required fields are missing."
+					},
+					"response": []
+				},
+				{
+					"name": "Resource Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_jwt}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/nonexistent-endpoint",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"nonexistent-endpoint"
+							]
+						},
+						"description": "Tests API Gateway behavior when accessing a non-existent resource."
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for error handling in the WSO2 API Gateway."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "gateway_url",
+			"value": "https://localhost:8243",
+			"type": "string",
+			"disabled": false
+		}
+	]
+}
+{
+	"info": {
+		"_postman_id": "c9e21f3e-5a88-47d2-9dd5-fdb8c2a2c91c",
+		"name": "Banking WSO2 API Gateway",
+		"description": "Collection for testing the WSO2 API Gateway integration with the banking microservices project.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "OAuth2 Token Management",
+			"item": [
+				{
+					"name": "Get Portal Application Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"portal_token\", jsonData.access_token);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Token received\", function () {",
+									"    pm.expect(jsonData.access_token).to.exist;",
+									"});",
+									"console.log(\"Portal token saved to environment variable: portal_token\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{portal_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{portal_client_secret}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{gateway_url}}/token",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"token"
+							]
+						},
+						"description": "Obtains an access token for the vbank portal application."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Mobile Application Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"mobile_token\", jsonData.access_token);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Token received\", function () {",
+									"    pm.expect(jsonData.access_token).to.exist;",
+									"});",
+									"console.log(\"Mobile token saved to environment variable: mobile_token\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{mobile_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{mobile_client_secret}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{gateway_url}}/token",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"token"
+							]
+						},
+						"description": "Obtains an access token for the vbank mobile application."
+					},
+					"response": []
+				}
+			],
+			"description": "Requests for obtaining OAuth2 tokens from WSO2 API Manager for different applications."
+		},
+		{
+			"name": "Register API",
+			"item": [
+				{
+					"name": "Register User (Portal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains user data\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.userId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newportaluser\",\n  \"password\": \"Password123\",\n  \"email\": \"portaluser@example.com\",\n  \"firstName\": \"Portal\",\n  \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/register",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"register"
+							]
+						},
+						"description": "Registers a new user using the Portal application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Register User (Mobile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains user data\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.userId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{mobile_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newmobileuser\",\n  \"password\": \"Password123\",\n  \"email\": \"mobileuser@example.com\",\n  \"firstName\": \"Mobile\",\n  \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/register",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"register"
+							]
+						},
+						"description": "Registers a new user using the Mobile application token."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for user registration through the WSO2 API Gateway."
+		},
+		{
+			"name": "Login API",
+			"item": [
+				{
+					"name": "Login (Portal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"user_jwt\", jsonData.token);",
+									"",
+									"// If the response contains a userId, save it",
+									"if (jsonData.userId) {",
+									"    pm.environment.set(\"user_id\", jsonData.userId);",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"JWT token received\", function () {",
+									"    pm.expect(jsonData.token).to.exist;",
+									"});",
+									"",
+									"console.log(\"User JWT token saved to environment variable: user_jwt\");",
+									"if (jsonData.userId) {",
+									"    console.log(\"User ID saved to environment variable: user_id\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newportaluser\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/login",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Logs in a user using the Portal application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Mobile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"mobile_user_jwt\", jsonData.token);",
+									"",
+									"// If the response contains a userId, save it",
+									"if (jsonData.userId) {",
+									"    pm.environment.set(\"mobile_user_id\", jsonData.userId);",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"JWT token received\", function () {",
+									"    pm.expect(jsonData.token).to.exist;",
+									"});",
+									"",
+									"console.log(\"Mobile user JWT token saved to environment variable: mobile_user_jwt\");",
+									"if (jsonData.userId) {",
+									"    console.log(\"Mobile user ID saved to environment variable: mobile_user_id\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{mobile_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newmobileuser\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/login",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "Logs in a user using the Mobile application token."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for user authentication through the WSO2 API Gateway."
+		},
+		{
+			"name": "Dashboard API",
+			"item": [
+				{
+					"name": "Get Dashboard (Portal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains dashboard data\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.userId).to.exist;",
+									"    pm.expect(jsonData.accounts).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_jwt}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/dashboard/{{user_id}}",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"dashboard",
+								"{{user_id}}"
+							]
+						},
+						"description": "Retrieves the user dashboard using the Portal application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard (Mobile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains dashboard data\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.userId).to.exist;",
+									"    pm.expect(jsonData.accounts).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{mobile_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mobile_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/dashboard/{{mobile_user_id}}",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"dashboard",
+								"{{mobile_user_id}}"
+							]
+						},
+						"description": "Retrieves the user dashboard using the Mobile application token."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for retrieving user dashboard data through the WSO2 API Gateway."
+		},
+		{
+			"name": "Transactions API",
+			"item": [
+				{
+					"name": "Initiate Transfer (Portal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"transaction_id\", jsonData.transactionId);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains transaction data\", function () {",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});",
+									"",
+									"console.log(\"Transaction ID saved to environment variable: transaction_id\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fromAccountId\": \"{{source_account_id}}\",\n  \"toAccountId\": \"{{destination_account_id}}\",\n  \"amount\": 100.00,\n  \"description\": \"Test transfer from Portal\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/transactions/transfer/initiation",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"transactions",
+								"transfer",
+								"initiation"
+							]
+						},
+						"description": "Initiates a money transfer using the Portal application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Transfer (Portal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response indicates successful transfer\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"{{transaction_id}}\",\n  \"fromAccountId\": \"{{source_account_id}}\",\n  \"toAccountId\": \"{{destination_account_id}}\",\n  \"amount\": 100.00\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/transactions/transfer/execution",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"transactions",
+								"transfer",
+								"execution"
+							]
+						},
+						"description": "Executes a previously initiated money transfer using the Portal application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Initiate Transfer (Mobile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"mobile_transaction_id\", jsonData.transactionId);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains transaction data\", function () {",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});",
+									"",
+									"console.log(\"Mobile transaction ID saved to environment variable: mobile_transaction_id\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{mobile_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mobile_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fromAccountId\": \"{{mobile_source_account_id}}\",\n  \"toAccountId\": \"{{mobile_destination_account_id}}\",\n  \"amount\": 75.00,\n  \"description\": \"Test transfer from Mobile\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/transactions/transfer/initiation",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"transactions",
+								"transfer",
+								"initiation"
+							]
+						},
+						"description": "Initiates a money transfer using the Mobile application token."
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Transfer (Mobile)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response indicates successful transfer\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{mobile_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{mobile_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"{{mobile_transaction_id}}\",\n  \"fromAccountId\": \"{{mobile_source_account_id}}\",\n  \"toAccountId\": \"{{mobile_destination_account_id}}\",\n  \"amount\": 75.00\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/transactions/transfer/execution",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"transactions",
+								"transfer",
+								"execution"
+							]
+						},
+						"description": "Executes a previously initiated money transfer using the Mobile application token."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for initiating and executing money transfers through the WSO2 API Gateway."
+		},
+		{
+			"name": "API Product (vbank)",
+			"item": [
+				{
+					"name": "Login via API Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"product_user_jwt\", jsonData.token);",
+									"",
+									"// If the response contains a userId, save it",
+									"if (jsonData.userId) {",
+									"    pm.environment.set(\"product_user_id\", jsonData.userId);",
+									"}",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"JWT token received\", function () {",
+									"    pm.expect(jsonData.token).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"newportaluser\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/vbank/login",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"vbank",
+								"login"
+							]
+						},
+						"description": "Logs in a user using the API product endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard via API Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains dashboard data\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.userId).to.exist;",
+									"    pm.expect(jsonData.accounts).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{product_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/vbank/dashboard/{{product_user_id}}",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"vbank",
+								"dashboard",
+								"{{product_user_id}}"
+							]
+						},
+						"description": "Retrieves the user dashboard using the API product endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Initiate Transfer via API Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"product_transaction_id\", jsonData.transactionId);",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains transaction data\", function () {",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{product_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fromAccountId\": \"{{source_account_id}}\",\n  \"toAccountId\": \"{{destination_account_id}}\",\n  \"amount\": 50.00,\n  \"description\": \"Test transfer via API Product\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/vbank/transactions/transfer/initiation",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"vbank",
+								"transactions",
+								"transfer",
+								"initiation"
+							]
+						},
+						"description": "Initiates a money transfer using the API product endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Transfer via API Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response indicates successful transfer\", function () {",
+									"    var jsonData = JSON.parse(responseBody);",
+									"    pm.expect(jsonData.transactionId).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{portal_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{product_user_jwt}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"{{product_transaction_id}}\",\n  \"fromAccountId\": \"{{source_account_id}}\",\n  \"toAccountId\": \"{{destination_account_id}}\",\n  \"amount\": 50.00\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/vbank/transactions/transfer/execution",
+							"host": [
+								"{{gateway_url}}"
+							],
+							"path": [
+								"vbank",
+								"transactions",
+								"transfer",
+								"execution"
+							]
+						},
+						"description": "Executes a previously initiated money transfer using the API product endpoint."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for testing the vbank API product in the WSO2 API Gateway."
+		},
+		{
+			"name": "Error Scenarios",
+			"item": [
+				{
+					"name": "Invalid Token Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+

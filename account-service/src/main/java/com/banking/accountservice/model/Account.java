@@ -45,11 +45,14 @@ public class Account {
     @Column(name="updated_at",nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name="last_transaction_date")
+    private LocalDateTime lastTransactionDate;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.lastTransactionDate = LocalDateTime.now(); // Initialize with creation date
     }
 
     @PreUpdate
@@ -129,5 +132,13 @@ public class Account {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getLastTransactionDate() {
+        return lastTransactionDate;
+    }
+
+    public void setLastTransactionDate(LocalDateTime lastTransactionDate) {
+        this.lastTransactionDate = lastTransactionDate;
     }
 }

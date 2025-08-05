@@ -1,0 +1,679 @@
+{
+  "info": {
+    "_postman_id": "ad2e9f64-e5c2-43b1-b91c-6c9234f8ae42",
+    "name": "Banking Microservices Project_V3",
+    "description": "A comprehensive collection to test the entire banking microservices architecture",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service",
+      "description": "APIs for user registration, login and profile management",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful registration",
+                  "pm.test(\"Status code is 201\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Save userId to environment",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.userId) {",
+                  "    pm.environment.set(\"userId\", jsonData.userId);",
+                  "    console.log(\"userId saved to environment:\", jsonData.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\",\n  \"email\": \"john.doe@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/users/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful login",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/users/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "login"]
+            },
+            "description": "Login with existing user credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if userId exists in environment variables",
+                  "if (!pm.environment.get(\"userId\")) {",
+                  "    console.log(\"No userId found in environment variables. Please run the Register User request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful profile retrieval",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/users/{{userId}}/profile",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "{{userId}}", "profile"]
+            },
+            "description": "Retrieve user profile details"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account Service",
+      "description": "APIs for account management, creation and balance inquiries",
+      "item": [
+        {
+          "name": "Create Account",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if userId exists in environment variables",
+                  "if (!pm.environment.get(\"userId\")) {",
+                  "    console.log(\"No userId found in environment variables. Please run the Register User request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful account creation",
+                  "pm.test(\"Status code is 201\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Save accountId to environment",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.accountId) {",
+                  "    pm.environment.set(\"accountId\", jsonData.accountId);",
+                  "    console.log(\"accountId saved to environment:\", jsonData.accountId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 100.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts"]
+            },
+            "description": "Create a new account for the user"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Second Account",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if userId exists in environment variables",
+                  "if (!pm.environment.get(\"userId\")) {",
+                  "    console.log(\"No userId found in environment variables. Please run the Register User request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful account creation",
+                  "pm.test(\"Status code is 201\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Save second accountId to environment",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.accountId) {",
+                  "    pm.environment.set(\"secondAccountId\", jsonData.accountId);",
+                  "    console.log(\"secondAccountId saved to environment:\", jsonData.accountId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"accountType\": \"CHECKING\",\n  \"initialBalance\": 200.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts"]
+            },
+            "description": "Create a second account for testing transfers"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account by ID",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if accountId exists in environment variables",
+                  "if (!pm.environment.get(\"accountId\")) {",
+                  "    console.log(\"No accountId found in environment variables. Please run the Create Account request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful account retrieval",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/accounts/{{accountId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts", "{{accountId}}"]
+            },
+            "description": "Retrieve account details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User's Accounts",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if userId exists in environment variables",
+                  "if (!pm.environment.get(\"userId\")) {",
+                  "    console.log(\"No userId found in environment variables. Please run the Register User request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful accounts retrieval",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test that at least one account is returned",
+                  "pm.test(\"At least one account is returned\", function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/users/{{userId}}/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["users", "{{userId}}", "accounts"]
+            },
+            "description": "Retrieve all accounts for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Transfer Between Accounts",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if both account IDs exist in environment variables",
+                  "if (!pm.environment.get(\"accountId\") || !pm.environment.get(\"secondAccountId\")) {",
+                  "    console.log(\"Missing account IDs in environment variables. Please run the Create Account requests first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful transfer",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test correct response message",
+                  "pm.test(\"Response contains success message\", function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include(\"Account updated successfully\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{accountId}}\",\n  \"toAccountId\": \"{{secondAccountId}}\",\n  \"amount\": 25.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/accounts/transfer",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts", "transfer"]
+            },
+            "description": "Transfer funds between accounts"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transaction Service",
+      "description": "APIs for transaction management, initiation and execution",
+      "item": [
+        {
+          "name": "Initiate Transfer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if both account IDs exist in environment variables",
+                  "if (!pm.environment.get(\"accountId\") || !pm.environment.get(\"secondAccountId\")) {",
+                  "    console.log(\"Missing account IDs in environment variables. Please run the Create Account requests first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful transfer initiation",
+                  "pm.test(\"Status code is 201\", function() {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Save transactionId to environment",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.transactionId) {",
+                  "    pm.environment.set(\"transactionId\", jsonData.transactionId);",
+                  "    console.log(\"transactionId saved to environment:\", jsonData.transactionId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{accountId}}\",\n  \"toAccountId\": \"{{secondAccountId}}\",\n  \"amount\": 15.00,\n  \"description\": \"Test transaction\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/transactions/transfer/initiation",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["transactions", "transfer", "initiation"]
+            },
+            "description": "Initiate a fund transfer between two accounts"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Transfer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if transactionId exists in environment variables",
+                  "if (!pm.environment.get(\"transactionId\")) {",
+                  "    console.log(\"No transactionId found in environment variables. Please run the Initiate Transfer request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful transfer execution",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test status in response is Success",
+                  "pm.test(\"Transfer status is Success\", function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"Success\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/transactions/transfer/execution",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["transactions", "transfer", "execution"]
+            },
+            "description": "Execute a previously initiated fund transfer"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction History",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if accountId exists in environment variables",
+                  "if (!pm.environment.get(\"accountId\")) {",
+                  "    console.log(\"No accountId found in environment variables. Please run the Create Account request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful transaction history retrieval",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/accounts/{{accountId}}/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["accounts", "{{accountId}}", "transactions"]
+            },
+            "description": "Retrieve transaction history for an account"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BFF Service",
+      "description": "Backend for Frontend service that aggregates data from multiple microservices",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if userId exists in environment variables",
+                  "if (!pm.environment.get(\"userId\")) {",
+                  "    console.log(\"No userId found in environment variables. Please run the Register User request first.\");",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test successful dashboard retrieval",
+                  "pm.test(\"Status code is 200\", function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test that user info is included",
+                  "pm.test(\"Dashboard contains user information\", function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userId).to.eql(pm.environment.get(\"userId\"));",
+                  "    pm.expect(jsonData.username).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8084/dashboard/{{userId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8084",
+              "path": ["dashboard", "{{userId}}"]
+            },
+            "description": "Retrieve the dashboard data for a user, aggregating data from multiple services"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost",
+      "type": "string"
+    },
+    {
+      "key": "userServicePort",
+      "value": "8081",
+      "type": "string"
+    },
+    {
+      "key": "accountServicePort",
+      "value": "8082",
+      "type": "string"
+    },
+    {
+      "key": "transactionServicePort",
+      "value": "8083",
+      "type": "string"
+    },
+    {
+      "key": "bffServicePort",
+      "value": "8084",
+      "type": "string"
+    }
+  ]
+}
+

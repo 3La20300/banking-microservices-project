@@ -1,11 +1,8 @@
 // ExternalServiceClient.java
 package com.banking.bffservice.service;
 
-import com.banking.bffservice.dto.request.TransferExecutionRequest;
-import com.banking.bffservice.dto.request.TransferInitiationRequest;
 import com.banking.bffservice.dto.response.Account;
 import com.banking.bffservice.dto.response.Transaction;
-import com.banking.bffservice.dto.response.TransferResponse;
 import com.banking.bffservice.dto.response.UserProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +14,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -94,55 +89,55 @@ public class ExternalServiceClient {
     /**
      * Get a specific account by ID to check balance
      */
-    public Mono<Account> getAccountById(UUID accountId) {
-        logger.debug("Fetching account details for accountId: {}", accountId);
-
-        return accountServiceWebClient
-                .get()
-                .uri("/accounts/{accountId}", accountId)
-                .retrieve()
-                .bodyToMono(Account.class)
-                .doOnSuccess(account -> logger.debug("Successfully fetched account details for accountId: {}", accountId))
-                .doOnError(error -> logger.error("Error fetching account details for accountId: {}", accountId, error))
-                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
-    }
-
-    /**
-     * Check if an account has sufficient funds for a transfer
-     */
-    public Mono<Boolean> hasSufficientFunds(UUID accountId, BigDecimal amount) {
-        logger.debug("Checking if account {} has sufficient funds for amount {}", accountId, amount);
-
-        return getAccountById(accountId)
-                .map(account -> account.getBalance().compareTo(amount) >= 0)
-                .doOnSuccess(sufficient -> logger.debug("Account {} has {} funds for amount {}",
-                        accountId, sufficient ? "sufficient" : "insufficient", amount))
-                .doOnError(error -> logger.error("Error checking funds for accountId: {}", accountId, error))
-                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
-    }
-
-    /**
-     * Update account balance after a transfer
-     */
-    public Mono<Account> updateAccountBalance(UUID accountId, BigDecimal amount) {
-        logger.debug("Updating balance for account {} by amount {}", accountId, amount);
-
-        // In a real implementation, this should use a specific API endpoint
-        // to update the balance atomically, but for simplicity we'll simulate it
-        return accountServiceWebClient
-                .put()
-                .uri("/accounts/{accountId}/balance", accountId)
-                .bodyValue(new HashMap<String, BigDecimal>() {{
-                    put("amount", amount);
-                }})
-                .retrieve()
-                .bodyToMono(Account.class)
-                .doOnSuccess(account -> logger.debug("Successfully updated balance for accountId: {}", accountId))
-                .doOnError(error -> logger.error("Error updating balance for accountId: {}", accountId, error))
-                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
-    }
-
-    // Transaction Service Calls
+//    public Mono<Account> getAccountById(UUID accountId) {
+//        logger.debug("Fetching account details for accountId: {}", accountId);
+//
+//        return accountServiceWebClient
+//                .get()
+//                .uri("/accounts/{accountId}", accountId)
+//                .retrieve()
+//                .bodyToMono(Account.class)
+//                .doOnSuccess(account -> logger.debug("Successfully fetched account details for accountId: {}", accountId))
+//                .doOnError(error -> logger.error("Error fetching account details for accountId: {}", accountId, error))
+//                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
+//    }
+//
+//    /**
+//     * Check if an account has sufficient funds for a transfer
+//     */
+//    public Mono<Boolean> hasSufficientFunds(UUID accountId, BigDecimal amount) {
+//        logger.debug("Checking if account {} has sufficient funds for amount {}", accountId, amount);
+//
+//        return getAccountById(accountId)
+//                .map(account -> account.getBalance().compareTo(amount) >= 0)
+//                .doOnSuccess(sufficient -> logger.debug("Account {} has {} funds for amount {}",
+//                        accountId, sufficient ? "sufficient" : "insufficient", amount))
+//                .doOnError(error -> logger.error("Error checking funds for accountId: {}", accountId, error))
+//                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
+//    }
+//
+//    /**
+//     * Update account balance after a transfer
+//     */
+//    public Mono<Account> updateAccountBalance(UUID accountId, BigDecimal amount) {
+//        logger.debug("Updating balance for account {} by amount {}", accountId, amount);
+//
+//        // In a real implementation, this should use a specific API endpoint
+//        // to update the balance atomically, but for simplicity we'll simulate it
+//        return accountServiceWebClient
+//                .put()
+//                .uri("/accounts/{accountId}/balance", accountId)
+//                .bodyValue(new HashMap<String, BigDecimal>() {{
+//                    put("amount", amount);
+//                }})
+//                .retrieve()
+//                .bodyToMono(Account.class)
+//                .doOnSuccess(account -> logger.debug("Successfully updated balance for accountId: {}", accountId))
+//                .doOnError(error -> logger.error("Error updating balance for accountId: {}", accountId, error))
+//                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
+//    }
+//
+//    // Transaction Service Calls
     public Mono<List<Transaction>> getAccountTransactions(UUID accountId) {
         logger.debug("Fetching transactions for accountId: {}", accountId);
 
@@ -157,43 +152,66 @@ public class ExternalServiceClient {
                 .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
     }
 
-    public Mono<TransferResponse> initiateTransfer(TransferInitiationRequest request) {
-        logger.debug("Initiating transfer from {} to {} for amount {}",
-                request.getFrom_accountId(), request.getTo_accountId(), request.getAmount());
-
-        return transactionServiceWebClient
-                .post()
-                .uri("/transactions/transfer/initiation")
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(TransferResponse.class)
-                .doOnSuccess(response -> logger.debug("Successfully initiated transfer with transactionId: {}",
-                        response.getTransactionId()))
-                .doOnError(error -> logger.error("Error initiating transfer", error))
-                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
-    }
-
-    public Mono<TransferResponse> executeTransfer(TransferExecutionRequest request) {
-        logger.debug("Executing transfer with transactionId: {}", request.getTransactionId());
-
-        return transactionServiceWebClient
-                .post()
-                .uri("/transactions/transfer/execution")
-                .bodyValue(request)
-                .retrieve()
-                .bodyToMono(TransferResponse.class)
-                .doOnSuccess(response -> logger.debug("Successfully executed transfer with transactionId: {}",
-                        response.getTransactionId()))
-                .doOnError(error -> logger.error("Error executing transfer with transactionId: {}",
-                        request.getTransactionId(), error))
-                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
-    }
+//    public Mono<TransferResponse> initiateTransfer(TransferInitiationRequest request) {
+//        logger.debug("Initiating transfer from {} to {} for amount {}",
+//                request.getFromAccountId(), request.getToAccountId(), request.getAmount());
+//
+//        return transactionServiceWebClient
+//                .post()
+//                .uri("/transactions/transfer/initiation")
+//                .bodyValue(request)
+//                .retrieve()
+//                .bodyToMono(TransferResponse.class)
+//                .doOnSuccess(response -> logger.debug("Successfully initiated transfer with transactionId: {}",
+//                        response.getTransactionId()))
+//                .doOnError(error -> logger.error("Error initiating transfer", error))
+//                .onErrorMap(WebClientResponseException.class, this::mapWebClientException);
+//    }
+//
+//    public Mono<TransferResponse> executeTransfer(TransferExecutionRequest request) {
+//        logger.debug("Executing transfer with transactionId: {}", request.getTransactionId());
+//
+//        return transactionServiceWebClient
+//                .post()
+//                .uri("/transactions/transfer/execution")
+//                .bodyValue(request)
+//                .retrieve()
+//                .bodyToMono(TransferResponse.class)
+//                .doOnSuccess(response -> logger.debug("Successfully executed transfer with transactionId: {}",
+//                        response.getTransactionId()))
+//                .doOnError(error -> {
+//                    logger.error("Error executing transfer with transactionId: {}, error: {}",
+//                            request.getTransactionId(), error.getMessage(), error);
+//
+//                    // Log additional details if it's a WebClient error
+//                    if (error instanceof WebClientResponseException) {
+//                        WebClientResponseException wcError = (WebClientResponseException) error;
+//                        logger.error("Response body: {}", wcError.getResponseBodyAsString());
+//                        logger.error("Status code: {}", wcError.getStatusCode());
+//                    }
+//                })
+//                .onErrorResume(WebClientResponseException.class, ex -> {
+//                    String errorBody = ex.getResponseBodyAsString();
+//                    logger.error("WebClient error response body: {}", errorBody);
+//
+//                    // Create a transfer response with the error details
+//                    TransferResponse errorResponse = new TransferResponse();
+//                    errorResponse.setTransactionId(request.getTransactionId());
+//                    errorResponse.setFromAccountId(request.getFromAccountId());
+//                    errorResponse.setToAccountId(request.getToAccountId());
+//                    errorResponse.setAmount(request.getAmount());
+//                    errorResponse.setDescription("Error: " + ex.getMessage() + " | Response: " + errorBody);
+//
+//                    return Mono.just(errorResponse);
+//                });
+//    }
 
     private RuntimeException mapWebClientException(WebClientResponseException ex) {
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String message = ex.getMessage();
+        String responseBody = ex.getResponseBodyAsString();
 
-        logger.error("WebClient error - Status: {}, Message: {}", status, message);
+        logger.error("WebClient error - Status: {}, Message: {}, Body: {}", status, message, responseBody);
 
         switch (status) {
             case NOT_FOUND:

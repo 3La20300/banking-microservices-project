@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -14,13 +13,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransactionResponseDto {
-
-
     private UUID transactionId;
-    private UUID fromAccountId;
-    private UUID toAccountId;
-    private BigDecimal amount;
-    private String description;
+//    private UUID fromAccountId;
+//    private UUID toAccountId;
+    private String status;
+//    private BigDecimal amount;
+//    private String description;
     private LocalDateTime timestamp;
 
 }

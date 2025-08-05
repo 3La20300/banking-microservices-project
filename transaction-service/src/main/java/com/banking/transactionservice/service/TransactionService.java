@@ -1,19 +1,18 @@
 package com.banking.transactionservice.service;
 
-import com.banking.transactionservice.dto.TransactionExecutionDto;
-import com.banking.transactionservice.dto.TransactionHistoryDto;
-import com.banking.transactionservice.dto.TransactionInitiationDto;
-import com.banking.transactionservice.dto.TransactionResponseDto;
-import com.banking.transactionservice.exception.InsufficientFundsException;
+import com.banking.transactionservice.dto.*;
 import com.banking.transactionservice.exception.InvalidAccountException;
-import com.banking.transactionservice.model.Transaction;
 import com.banking.transactionservice.exception.InvalidTransactionException;
+import com.banking.transactionservice.model.Transaction;
 import com.banking.transactionservice.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,72 +20,132 @@ import java.util.stream.Collectors;
 @Service
 public class TransactionService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TransactionService.class);
+
+    private final ExternalServiceClient externalServiceClient;
+    private final TransactionRepository transactionRepository;
+
     @Autowired
-    private TransactionRepository transactionRepository;
+    public TransactionService(ExternalServiceClient externalServiceClient, TransactionRepository transactionRepository) {
+        this.externalServiceClient = externalServiceClient;
+        this.transactionRepository = transactionRepository;
+    }
+
 
     // This would be typically injected, but for now we'll leave a comment
     // @Autowired
     // private AccountServiceClient accountServiceClient;
 
-    @Transactional
-    public TransactionResponseDto initiateTransaction(TransactionInitiationDto transactionInitiationDto) {
-        // Validate account IDs (in a real scenario, this would call the Account Service)
-        UUID fromAccountId = transactionInitiationDto.getFromAccountId();
-        UUID toAccountId = transactionInitiationDto.getToAccountId();
 
-        // Check if account IDs are valid
-        if (fromAccountId == null || toAccountId == null) {
-            throw new InvalidAccountException("Invalid 'from' or 'to' account ID.");
+    //    @Transactional : Not used with Reactive progeramming, but kept for clarity
+    public Mono<TransactionResponseDto> initiateTransaction(TransactionInitiationDto dto) {
+        UUID fromId = dto.getFromAccountId();
+        UUID toId = dto.getToAccountId();
+
+        if (fromId == null || toId == null) {
+            return Mono.error(new InvalidAccountException("Invalid account IDs"));
         }
 
-        // Check if it's not a self-transfer
-        if (fromAccountId.equals(toAccountId)) {
-            throw new InvalidTransactionException("Source and destination accounts cannot be the same");
+        if (fromId.equals(toId)) {
+            return Mono.error(new InvalidTransactionException("Source and destination accounts cannot be the same"));
         }
 
-        Transaction transaction= new Transaction();
-        transaction.setFrom_accountId(fromAccountId);
-        transaction.setTo_accountId(toAccountId);
-        transaction.setAmount(transactionInitiationDto.getAmount());
-        transaction.setDescription("Transaction Initiated");
-        transaction.setStatus(Transaction.AccountStatus.INITIATED);
+        Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromId);
+        Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toId);
 
-        Transaction saved = transactionRepository.save(transaction);
+        return Mono.zip(fromAccountMono, toAccountMono)
+                .flatMap(tuple -> {
+                    AccountDto from = tuple.getT1();
+                    AccountDto to = tuple.getT2();
 
-        return mapToResponseDto(saved);
+                    if (!"ACTIVE".equals(from.getStatus()) || !"ACTIVE".equals(to.getStatus())) {
+                        return Mono.error(new InvalidAccountException("One of the accounts is not active"));
+                    }
+
+                    if (from.getBalance().compareTo(dto.getAmount()) < 0) {
+                        return Mono.error(new InvalidTransactionException("Insufficient funds"));
+                    }
+
+                    Transaction transaction = new Transaction();
+                    transaction.setFromAccountId(fromId);
+                    transaction.setToAccountId(toId);
+                    transaction.setAmount(dto.getAmount());
+                    transaction.setDescription(dto.getDescription());
+                    transaction.setStatus(Transaction.TransactionStatus.INITIATED);
+
+                    return Mono.fromCallable(() -> transactionRepository.save(transaction))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .map(saved -> new TransactionResponseDto(
+                                    saved.getTransactionId(),
+                                    "Initiated",
+                                    LocalDateTime.now()
+                            ));
+                });
     }
 
-    @Transactional
-    public TransactionResponseDto executeTransaction(TransactionExecutionDto transactionExecutionDto) {
-        Transaction transaction = transactionRepository.findById(transactionExecutionDto.getTransactionId())
-                .orElseThrow(() -> new InvalidTransactionException("Transaction not found"));
-
-        if (!transaction.getFrom_accountId().equals(transactionExecutionDto.getFromAccountId()) ||
-        !transaction.getTo_accountId().equals(transactionExecutionDto.getToAccountId())) {
-            throw new InvalidTransactionException("Transaction details do not match");
-        }
-
-        if (transaction.getStatus() != Transaction.AccountStatus.INITIATED) {
-            throw new InvalidTransactionException("Transaction already executed or invalid state");
-        }
-
-        // In a real application with communication to the Account Service, we would:
-        // 1. Check if the source account has sufficient funds
-        // 2. Update both account balances
-
-        // Simulation of checking for sufficient funds
-        // boolean hasSufficientFunds = accountServiceClient.checkSufficientFunds(
-        //    transaction.getFrom_accountId(), transaction.getAmount());
-        // if (!hasSufficientFunds) {
-        //    throw new InsufficientFundsException("Insufficient funds in source account");
-        // }
-
-        // Since in this microservices architecture, the BFF will handle the communication
-        // with the Account Service, we'll just update the transaction status here
-        transaction.setStatus(Transaction.AccountStatus.SUCCESS);
-        transactionRepository.save(transaction);
-        return mapToResponseDto(transaction);
+//Why many returns ? Think of it like:
+//
+//You ask the bank for account info → Mono<AccountDto>
+//
+//When the info comes back, you create a transaction → Mono<TransactionResponseDto>
+//
+//The user only receives the final result (transaction response), not the intermediate account.
+//MONO means "I will give you a single value in the future". used with Reactive programming to handle asynchronous operations.
+//    @Transactional : Not used with Reactive progeramming, but kept for clarity
+public Mono<TransactionResponseDto> executeTransaction(UUID transactionId) {
+//    UUID transactionId = transactionExecutionDto.getTransactionId(); // Assuming this comes from the DTO or request body
+    if (transactionId == null) {
+        return Mono.error(new InvalidTransactionException("Invalid transaction ID"));
     }
+
+    return Mono.fromCallable(() -> transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new InvalidTransactionException("Transaction not found")))
+        .subscribeOn(Schedulers.boundedElastic())
+        .flatMap(transaction -> {
+            UUID fromAccountId = transaction.getFromAccountId();
+            UUID toAccountId = transaction.getToAccountId();
+
+            if (transaction.getStatus() != Transaction.TransactionStatus.INITIATED) {
+                return Mono.error(new InvalidTransactionException("Transaction already executed or invalid state"));
+            }
+
+            Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromAccountId);
+            Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toAccountId);
+
+            return Mono.zip(fromAccountMono, toAccountMono)
+                    .flatMap(tuple -> {
+                        AccountDto from = tuple.getT1();
+                        AccountDto to = tuple.getT2();
+
+                        if (!"ACTIVE".equals(from.getStatus()) || !"ACTIVE".equals(to.getStatus())) {
+                            transaction.setStatus(Transaction.TransactionStatus.FAILED);
+                            return Mono.fromCallable(() -> transactionRepository.save(transaction))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .then(Mono.error(new InvalidAccountException("One of the accounts is not active")));
+                        }
+
+                        if (from.getBalance().compareTo(transaction.getAmount()) < 0) {
+                            transaction.setStatus(Transaction.TransactionStatus.FAILED);
+                            return Mono.fromCallable(() -> transactionRepository.save(transaction))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .then(Mono.error(new InvalidTransactionException("Insufficient funds in source account")));
+                        }
+
+                        // Use the transferBetweenAccounts method instead of two separate calls
+                        return externalServiceClient.transferBetweenAccounts(fromAccountId, toAccountId, transaction.getAmount())
+                            .then(Mono.fromCallable(() -> {
+                                transaction.setStatus(Transaction.TransactionStatus.SUCCESS);
+                                return transactionRepository.save(transaction);
+                            })
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .map(saved -> new TransactionResponseDto(
+                                saved.getTransactionId(),
+                                "Success",
+                                LocalDateTime.now()
+                            )));
+                    });
+        });
+}
 
     @Transactional
     public List<TransactionHistoryDto> getTransactionHistory(UUID accountId) {
@@ -99,9 +158,8 @@ public class TransactionService {
                 findByFromAccountIdOrToAccountIdOrderByTimestampDesc(accountId, accountId);
 
         if (transactions.isEmpty()) {
-            // This is optional, depends on your business logic
-            // You might want to return empty list instead
-            // throw new InvalidAccountException("No transactions found for this account ID");
+            // This is optional, depends on business logic : REQUIRENENT SATISFACTION purpose
+            throw new InvalidAccountException("No transactions found for this account ID");
         }
 
         // In a real scenario, we would get the current balance from the Account Service
@@ -117,7 +175,7 @@ public class TransactionService {
                     transactionHistoryDto.setAccountId(accountId);
 
                     // Determine if this is a debit or credit for this account
-                    BigDecimal amount = tx.getFrom_accountId().equals(accountId)
+                    BigDecimal amount = tx.getFromAccountId().equals(accountId)
                             ? tx.getAmount().negate() // Outgoing money (negative)
                             : tx.getAmount(); // Incoming money (positive)
 
@@ -126,7 +184,6 @@ public class TransactionService {
                     transactionHistoryDto.setTimestamp(tx.getTimestamp());
 
                     // Set the current balance as null or a placeholder
-                    // The actual value will be calculated by the BFF when aggregating data
                     transactionHistoryDto.setCurrentBalance(runningBalance);
 
                     return transactionHistoryDto;
@@ -136,10 +193,7 @@ public class TransactionService {
     private TransactionResponseDto mapToResponseDto(Transaction transaction) {
         return new TransactionResponseDto(
                 transaction.getTransactionId(),
-                transaction.getFrom_accountId(),
-                transaction.getTo_accountId(),
-                transaction.getAmount(),
-                transaction.getDescription(),
+                transaction.getStatus().toString(),
                 transaction.getTimestamp()
         );
     }

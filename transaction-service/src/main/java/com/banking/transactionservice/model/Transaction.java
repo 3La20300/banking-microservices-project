@@ -20,27 +20,28 @@ public class Transaction {
     @Column(name = "id", columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID transactionId;
 
-    @Column(nullable = false)
-    private UUID from_accountId;
+    @Column(nullable = false, name = "from_Account_id")
+//    @Column(nullable = false, name = "fromAccountId")
+    private UUID fromAccountId;
 
-    @Column(nullable = false)
-    private UUID to_accountId;
+    @Column(nullable = false, name = "to_account_id")
+//    @Column(nullable = false, name = "toAccountId")
+    private UUID toAccountId;
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = true ,length = 255)
+    @Column(nullable = true, length = 255)
     private String description; // e.g., "DEBIT", "CREDIT"
 
     @Column(nullable = false)
-    private AccountStatus status=AccountStatus.INITIATED; // e.g., "PENDING", "COMPLETED", "FAILED"
+    private TransactionStatus status=TransactionStatus.INITIATED;
 
-    public enum AccountStatus {
+    public enum TransactionStatus {
         INITIATED,
         SUCCESS,
         FAILED
     }
-
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
@@ -49,6 +50,4 @@ public class Transaction {
     protected void onCreate() {
         this.timestamp = LocalDateTime.now();
     }
-
-
 }

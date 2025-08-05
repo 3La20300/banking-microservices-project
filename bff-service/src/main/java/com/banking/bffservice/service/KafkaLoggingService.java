@@ -1,6 +1,6 @@
-package com.banking.transactionservice.service;
+package com.banking.bffservice.service;
 
-import com.banking.transactionservice.dto.LogMessageDto;
+import com.banking.bffservice.dto.LogMessageDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +26,7 @@ public class KafkaLoggingService
     @Value("${banking.kafka.topic.logging:banking-logs}")
     private String loggingTopic;
 
-    @Value("${spring.application.name}:Transaction-service")
+    @Value("${spring.application.name}:bff-service")
     private String serviceName;
 
     public void logRequest(String endpoint, String method, Object requestBody)
@@ -69,16 +69,16 @@ public class KafkaLoggingService
         }
     }
     private void sendLogMessage( LogMessageDto logMessage)
+    {
+        try{
+            String jsonMessage= objectMapper.writeValueAsString(logMessage);
+            kafkaTemplate.send(loggingTopic, jsonMessage);
+            logger.info("Message sent to Kafka: {}", jsonMessage);
+        }catch (Exception e)
         {
-            try{
-                String jsonMessage= objectMapper.writeValueAsString(logMessage);
-                kafkaTemplate.send(loggingTopic, jsonMessage);
-                logger.info("Message sent to Kafka: {}", jsonMessage);
-            }catch (Exception e)
-            {
-                logger.error("Failed to send message to Kafka", e);
-            }
+            logger.error("Failed to send message to Kafka", e);
         }
-    
+    }
+
 
 }

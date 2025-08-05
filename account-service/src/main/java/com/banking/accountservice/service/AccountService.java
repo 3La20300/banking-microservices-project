@@ -96,22 +96,172 @@ public class AccountService {
                 .collect(Collectors.toList());
     }
         //4. Scheduled job to inactivate stale accounts
-        @Scheduled(fixedRate=300000)
+//        @Scheduled(fixedRate=300000)//5 minutes
+//        @Scheduled(fixedRate=60000)//1 minute
+//        @Scheduled(cron = "0 */3 * * * *") // Every 3rd minute 3rd minute on every Day Like Companies reset at 12:00 AM
+
+        @Scheduled(fixedRate = 180000) // 3 minutes (in milliseconds)
         public void inactivateStaleAccounts()
         {
-            LocalDateTime cutoff = LocalDateTime.now().minusHours(24);
-            List<Account> activeAcoounts= accountRepository.findAll().stream()
-                    .filter(acc->acc.getStatus()== Account.AccountStatus.ACTIVE)
-                    .filter(acc -> acc.getUpdatedAt().isBefore(cutoff))
+            System.out.println("Running inactivateStaleAccounts job at " + LocalDateTime.now());
+
+            //I know Requirenment asked for 24 hours, but for testing purpose I am using 1 minute
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(3);
+            System.out.println("Looking for accounts with no transactions since: " + cutoff);
+
+            // Get all accounts first to see what we're working with
+            List<Account> allAccounts = accountRepository.findAll();
+            System.out.println("Total accounts in database: " + allAccounts.size());
+
+            // Get active accounts
+            List<Account> activeAccounts = allAccounts.stream()
+                    .filter(acc -> acc.getStatus() == Account.AccountStatus.ACTIVE)
                     .collect(Collectors.toList());
 
-            for(Account acc:activeAcoounts)
+            System.out.println("Total ACTIVE accounts: " + activeAccounts.size());
+
+            // Log details for each active account
+            for (Account acc : activeAccounts) {
+                LocalDateTime lastTxDate = acc.getLastTransactionDate();
+                if (lastTxDate == null) {
+                    lastTxDate = acc.getCreatedAt();
+                    System.out.println("Account " + acc.getAccountId() + " has NULL lastTransactionDate, using createdAt: " + lastTxDate);
+                } else {
+                    System.out.println("Account " + acc.getAccountId() + " lastTransactionDate: " + lastTxDate);
+                }
+
+                if (lastTxDate.isBefore(cutoff)) {
+                    System.out.println("Account " + acc.getAccountId() + " qualifies for inactivation (last tx: " + lastTxDate + ")");
+                } else {
+                    System.out.println("Account " + acc.getAccountId() + " is still active (last tx: " + lastTxDate + ")");
+                }
+            }
+
+            // Filter for stale accounts
+            List<Account> staleAccounts = activeAccounts.stream()
+                    .filter(acc -> {
+                        LocalDateTime lastTxDate = acc.getLastTransactionDate();
+                        // If lastTransactionDate is null, fall back to createdAt date
+                        if (lastTxDate == null) {
+                            lastTxDate = acc.getCreatedAt();
+                        }
+                        return lastTxDate.isBefore(cutoff);
+                    })
+                    .collect(Collectors.toList());
+
+            System.out.println("Stale accounts found: " + staleAccounts.size());
+
+            int count = 0;
+            if (staleAccounts.isEmpty()) {
+                System.out.println("No stale accounts found to inactivate.");
+                return;
+            }
+            for (Account acc : staleAccounts)
             {
+                System.out.println("Inactivating account: " + acc.getAccountId() + ", last transaction: " +
+                                   (acc.getLastTransactionDate() != null ? acc.getLastTransactionDate() : acc.getCreatedAt()));
                 acc.setStatus(Account.AccountStatus.INACTIVE);
                 accountRepository.save(acc);
+                count++;
             }
+
+            // Log how many accounts were inactivated
+            System.out.println("Inactivated " + count + " stale accounts that had no transactions for 1+ minute");
         }
 
+        //4. Update account balance
+        @Transactional
+        public AccountResponseDto updateAccountBalance(UUID accountId, BigDecimal amount) {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + accountId));
+
+            // Update the balance
+            BigDecimal currentBalance = account.getBalance();
+            BigDecimal newBalance;
+
+            // Handle debit and credit operations correctly: Already handled in TransactionService but just in case
+            if (amount.compareTo(BigDecimal.ZERO) < 0) {
+                // This is a debit operation (withdrawal or transfer from)
+                if (currentBalance.compareTo(amount.abs()) < 0) {
+                    throw new InvalidAccountDataException("Insufficient funds for this operation");
+                }
+                newBalance = currentBalance.add(amount); // amount is negative
+            } else {
+                // This is a credit operation (deposit or transfer to)
+                newBalance = currentBalance.add(amount);
+            }
+
+            // Safety check to ensure balance doesn't go below zero: Already handled in TransactionService but just in case
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+                throw new InvalidAccountDataException("Transaction would result in negative balance");
+            }
+
+            account.setBalance(newBalance);
+
+            // Update the last transaction date when balance changes due to a transaction
+            account.setLastTransactionDate(LocalDateTime.now());
+
+//            account.setUpdatedAt(LocalDateTime.now());
+
+            Account updatedAccount = accountRepository.save(account);
+
+            if (updatedAccount == null) {
+                throw new InvalidAccountDataException("Failed to update account balance");
+            }
+
+            return new AccountResponseDto(
+                    updatedAccount.getAccountId(),
+                    updatedAccount.getAccountNumber(),
+                    updatedAccount.getAccountType(),
+                    updatedAccount.getBalance(),
+                    updatedAccount.getStatus()
+            );
+        }
+
+        //5. Transfer between accounts
+        @Transactional
+        public void transferBetweenAccounts(UUID fromAccountId, UUID toAccountId, BigDecimal amount) {
+            // Validation
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new InvalidAccountDataException("Transfer amount must be greater than zero");
+            }
+
+            if (fromAccountId.equals(toAccountId)) {
+                throw new InvalidAccountDataException("Cannot transfer to the same account");
+            }
+
+            // Get source account
+            Account fromAccount = accountRepository.findById(fromAccountId)
+                    .orElseThrow(() -> new AccountNotFoundException("Source account not found with ID: " + fromAccountId));
+
+            // Get destination account
+            Account toAccount = accountRepository.findById(toAccountId)
+                    .orElseThrow(() -> new AccountNotFoundException("Destination account not found with ID: " + toAccountId));
+
+            // Check if both accounts are active
+            if (fromAccount.getStatus() != Account.AccountStatus.ACTIVE ||
+                toAccount.getStatus() != Account.AccountStatus.ACTIVE) {
+                throw new InvalidAccountDataException("One or both accounts are not active");
+            }
+
+            // Check sufficient funds
+            if (fromAccount.getBalance().compareTo(amount) < 0) {
+                throw new InvalidAccountDataException("Insufficient funds in source account");
+            }
+
+            // Perform the transfer
+            fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
+            toAccount.setBalance(toAccount.getBalance().add(amount));
+
+            // Update transaction dates
+            LocalDateTime now = LocalDateTime.now();
+            fromAccount.setLastTransactionDate(now);
+            toAccount.setLastTransactionDate(now);
+
+            // Save both accounts
+            accountRepository.save(fromAccount);
+            accountRepository.save(toAccount);
+        }
         private String generateAccountNumber(){
         return String.valueOf((long) (Math.random()*1_000_000_0000L));
         }

@@ -1,0 +1,443 @@
+{
+  "info": {
+    "_postman_id": "ad2e9f64-e5c2-43b1-b91c-6c9234f8ae42",
+    "name": "Banking Microservices Project_V2",
+    "description": "A comprehensive collection to test the entire banking microservices architecture",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service",
+      "description": "APIs for user registration, login and profile management",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\",\n  \"email\": \"john.doe@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/users/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "register"]
+            },
+            "description": "Register a new user"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john.doe\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/users/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "login"]
+            },
+            "description": "Login with existing user credentials"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8081/users/{{userId}}/profile",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["users", "{{userId}}", "profile"]
+            },
+            "description": "Retrieve user profile details"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Account Service",
+      "description": "APIs for account management, creation and balance inquiries",
+      "item": [
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"accountType\": \"SAVINGS\",\n  \"initialBalance\": 100.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts"]
+            },
+            "description": "Create a new bank account"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/accounts/{{accountId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["accounts", "{{accountId}}"]
+            },
+            "description": "Get details for a specific account"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8082/users/{{userId}}/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["users", "{{userId}}", "accounts"]
+            },
+            "description": "Get all accounts for a user"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transaction Service",
+      "description": "APIs for transaction processing, transfers, and history",
+      "item": [
+        {
+          "name": "Initiate Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/transactions/transfer/initiation",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["transactions", "transfer", "initiation"]
+            },
+            "description": "Initiate a transfer between accounts"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8083/transactions/transfer/execution",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["transactions", "transfer", "execution"]
+            },
+            "description": "Execute a previously initiated transfer"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8083/accounts/{{accountId}}/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["accounts", "{{accountId}}", "transactions"]
+            },
+            "description": "Get transaction history for an account"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "BFF Service",
+      "description": "Backend for Frontend APIs for aggregated operations",
+      "item": [
+        {
+          "name": "Get User Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "url": {
+              "raw": "http://localhost:8085/bff/dashboard/{{userId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["bff", "dashboard", "{{userId}}"]
+            },
+            "description": "Get a complete dashboard with user profile, accounts and transactions"
+          },
+          "response": []
+        },
+        {
+          "name": "Initiate Transfer (BFF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8085/bff/transactions/transfer/initiation",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["bff", "transactions", "transfer", "initiation"]
+            },
+            "description": "Initiate a transfer through the BFF service"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Transfer (BFF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8085/bff/transactions/transfer/execution",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8085",
+              "path": ["bff", "transactions", "transfer", "execution"]
+            },
+            "description": "Execute a transfer through the BFF service"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WSO2 API Gateway",
+      "description": "APIs exposed through the WSO2 API Gateway",
+      "item": [
+        {
+          "name": "Register (Gateway)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jane.doe\",\n  \"password\": \"securePassword456\",\n  \"email\": \"jane.doe@example.com\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8243/vbank/register",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8243",
+              "path": ["vbank", "register"]
+            },
+            "description": "Register a new user through the API gateway"
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Gateway)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"jane.doe\",\n  \"password\": \"securePassword456\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8243/vbank/login",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8243",
+              "path": ["vbank", "login"]
+            },
+            "description": "Login through the API gateway"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard (Gateway)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "https://localhost:8243/vbank/dashboard/{{userId}}",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8243",
+              "path": ["vbank", "dashboard", "{{userId}}"]
+            },
+            "description": "Get user dashboard through the API gateway"
+          },
+          "response": []
+        },
+        {
+          "name": "Initiate Transfer (Gateway)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8243/vbank/transactions/transfer/initiation",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8243",
+              "path": ["vbank", "transactions", "transfer", "initiation"]
+            },
+            "description": "Initiate transfer through the API gateway"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Transfer (Gateway)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "APP-NAME", "value": "PORTAL" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"fromAccountId\": \"{{fromAccountId}}\",\n  \"toAccountId\": \"{{toAccountId}}\",\n  \"amount\": 30.00,\n  \"description\": \"Transfer to checking account\"\n}"
+            },
+            "url": {
+              "raw": "https://localhost:8243/vbank/transactions/transfer/execution",
+              "protocol": "https",
+              "host": ["localhost"],
+              "port": "8243",
+              "path": ["vbank", "transactions", "transfer", "execution"]
+            },
+            "description": "Execute transfer through the API gateway"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "userId",
+      "value": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "type": "string"
+    },
+    {
+      "key": "accountId",
+      "value": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+      "type": "string"
+    },
+    {
+      "key": "fromAccountId",
+      "value": "f1e2d3c4-b5a6-9876-5432-10fedcba9876",
+      "type": "string"
+    },
+    {
+      "key": "toAccountId",
+      "value": "g7h8i9j0-k1l2-3456-7890-abcdef123456",
+      "type": "string"
+    },
+    {
+      "key": "transactionId",
+      "value": "t1r2a3n4-s5a6-7890-1234-567890abcdef",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "type": "string"
+    }
+  ]
+}
+

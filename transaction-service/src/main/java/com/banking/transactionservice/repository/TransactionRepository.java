@@ -18,6 +18,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByFromAccountIdOrToAccountId(UUID fromAccountId, UUID toAccountId);
 
-    List<Transaction> findByStatus(Transaction.AccountStatus status);
-
+    List<Transaction> findByStatus(Transaction.TransactionStatus status);
 }

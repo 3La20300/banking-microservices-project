@@ -1,5 +1,6 @@
 package com.banking.bffservice.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,15 +19,16 @@ public class TransferExecutionRequest {
     private UUID transactionId;
 
     @NotNull(message = "From account ID is required")
-    private UUID from_accountId;
+    @JsonProperty("fromAccountId")
+    private UUID fromAccountId;
 
     @NotNull(message = "To account ID is required")
-    private UUID to_accountId;
+    @JsonProperty("toAccountId")
+    private UUID toAccountId;
 
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than 0")
     private BigDecimal amount;
 
     private String description;
-
 }
