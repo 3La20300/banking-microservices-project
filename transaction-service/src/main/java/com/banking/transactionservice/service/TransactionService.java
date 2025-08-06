@@ -1,6 +1,9 @@
 package com.banking.transactionservice.service;
 
-import com.banking.transactionservice.dto.*;
+import com.banking.transactionservice.dto.AccountDto;
+import com.banking.transactionservice.dto.TransactionHistoryDto;
+import com.banking.transactionservice.dto.TransactionInitiationDto;
+import com.banking.transactionservice.dto.TransactionResponseDto;
 import com.banking.transactionservice.exception.InvalidAccountException;
 import com.banking.transactionservice.exception.InvalidTransactionException;
 import com.banking.transactionservice.model.Transaction;
@@ -50,8 +53,21 @@ public class TransactionService {
             return Mono.error(new InvalidTransactionException("Source and destination accounts cannot be the same"));
         }
 
-        Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromId);
-        Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toId);
+        Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromId)
+                .onErrorMap(
+                        ex-> new InvalidAccountException("Invalid 'from' or 'to' account ID."
+                ));
+
+        Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toId)
+                .onErrorMap(
+                ex-> new InvalidAccountException("Invalid 'from' or 'to' account ID."
+                ));
+
+        // Check if either account is null, which means it doesn't exist
+//        if (fromAccountMono == null || toAccountMono == null) {
+//            return Mono.error(new InvalidAccountException("Invalid 'from' or 'to' account ID."));
+//        }
+
 
         return Mono.zip(fromAccountMono, toAccountMono)
                 .flatMap(tuple -> {
@@ -65,6 +81,7 @@ public class TransactionService {
                     if (from.getBalance().compareTo(dto.getAmount()) < 0) {
                         return Mono.error(new InvalidTransactionException("Insufficient funds"));
                     }
+                    // Check if either account is null, which means it doesn't exist
 
                     Transaction transaction = new Transaction();
                     transaction.setFromAccountId(fromId);
@@ -109,8 +126,14 @@ public Mono<TransactionResponseDto> executeTransaction(UUID transactionId) {
                 return Mono.error(new InvalidTransactionException("Transaction already executed or invalid state"));
             }
 
-            Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromAccountId);
-            Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toAccountId);
+            Mono<AccountDto> fromAccountMono = externalServiceClient.getAccountById(fromAccountId)
+                    .onErrorMap(
+                        ex -> new InvalidAccountException("Invalid 'from' or 'to' account ID."));
+
+            Mono<AccountDto> toAccountMono = externalServiceClient.getAccountById(toAccountId)
+                    .onErrorMap(
+                        ex -> new InvalidAccountException("Invalid 'from' or 'to' account ID."));
+
 
             return Mono.zip(fromAccountMono, toAccountMono)
                     .flatMap(tuple -> {
@@ -123,6 +146,9 @@ public Mono<TransactionResponseDto> executeTransaction(UUID transactionId) {
                                     .subscribeOn(Schedulers.boundedElastic())
                                     .then(Mono.error(new InvalidAccountException("One of the accounts is not active")));
                         }
+                        //if account not found, it will throw an exception
+
+
 
                         if (from.getBalance().compareTo(transaction.getAmount()) < 0) {
                             transaction.setStatus(Transaction.TransactionStatus.FAILED);
@@ -154,8 +180,13 @@ public Mono<TransactionResponseDto> executeTransaction(UUID transactionId) {
             throw new InvalidAccountException("Invalid account ID");
         }
 
-        List<Transaction> transactions = transactionRepository.
-                findByFromAccountIdOrToAccountIdOrderByTimestampDesc(accountId, accountId);
+//        List<Transaction> transactions = transactionRepository.
+//                findByFromAccountIdOrToAccountIdOrderByTimestampDesc(accountId, accountId);
+
+        List<Transaction> transactions = transactionRepository.findByStatusAndFromAccountIdOrStatusAndToAccountIdOrderByTimestampDesc(
+                Transaction.TransactionStatus.SUCCESS, accountId,
+                Transaction.TransactionStatus.SUCCESS, accountId
+        );
 
         if (transactions.isEmpty()) {
             // This is optional, depends on business logic : REQUIRENENT SATISFACTION purpose
@@ -175,16 +206,14 @@ public Mono<TransactionResponseDto> executeTransaction(UUID transactionId) {
                     transactionHistoryDto.setAccountId(accountId);
 
                     // Determine if this is a debit or credit for this account
-                    BigDecimal amount = tx.getFromAccountId().equals(accountId)
+                    boolean isOutgoing = tx.getFromAccountId().equals(accountId);
+                    BigDecimal amount = isOutgoing
                             ? tx.getAmount().negate() // Outgoing money (negative)
-                            : tx.getAmount(); // Incoming money (positive)
+                            : tx.getAmount();         // Incoming money (positive)
 
                     transactionHistoryDto.setAmount(amount);
                     transactionHistoryDto.setDescription(tx.getDescription());
                     transactionHistoryDto.setTimestamp(tx.getTimestamp());
-
-                    // Set the current balance as null or a placeholder
-                    transactionHistoryDto.setCurrentBalance(runningBalance);
 
                     return transactionHistoryDto;
                 }).collect(Collectors.toList());

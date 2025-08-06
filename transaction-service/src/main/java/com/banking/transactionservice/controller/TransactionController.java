@@ -1,6 +1,5 @@
 package com.banking.transactionservice.controller;
 
-import com.banking.transactionservice.dto.TransactionExecutionDto;
 import com.banking.transactionservice.dto.TransactionHistoryDto;
 import com.banking.transactionservice.dto.TransactionInitiationDto;
 import com.banking.transactionservice.dto.TransactionResponseDto;
@@ -29,10 +28,10 @@ public class TransactionController {
     }
 
     @PostMapping("/transactions/transfer/execution")
-    public Mono<ResponseEntity<TransactionResponseDto>> executeTransaction(@Valid @RequestBody TransactionExecutionDto executionRequest)
+    public Mono<ResponseEntity<TransactionResponseDto>> executeTransaction(@RequestBody UUID transactionId)
     {
 //        UUID transactionId = UUID.fromString(executionRequest.get("transactionId"));
-        UUID transactionId = executionRequest.getTransactionId();
+//        UUID transactionId = executionRequest.getTransactionId();
         return transactionService.executeTransaction(transactionId)
                 .map(response -> ResponseEntity.ok(response));
     }

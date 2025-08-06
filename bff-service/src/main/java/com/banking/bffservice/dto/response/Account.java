@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +17,5 @@ public class Account {
     private String accountType;
     private BigDecimal balance;
     private String status;
-    private LocalDateTime createdAt;
     private List<Transaction> transactions;
 }

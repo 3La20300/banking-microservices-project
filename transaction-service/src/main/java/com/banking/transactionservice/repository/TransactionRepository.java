@@ -12,6 +12,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByFromAccountIdOrToAccountIdOrderByTimestampDesc(UUID fromAccountId, UUID toAccountId);
 
+    List<Transaction> findByStatusAndFromAccountIdOrStatusAndToAccountIdOrderByTimestampDesc(
+            Transaction.TransactionStatus status1, UUID fromAccountId,
+            Transaction.TransactionStatus status2, UUID toAccountId);
+
     List<Transaction> findByFromAccountIdOrderByTimestampDesc(UUID fromAccountId);
 
     List<Transaction> findByToAccountIdOrderByTimestampDesc(UUID toAccountId);

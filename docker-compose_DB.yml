@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: vbank_postgres
+    environment:
+      POSTGRES_DB: vbank_db
+      POSTGRES_USER: vbank_user
+      POSTGRES_PASSWORD: vbank_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

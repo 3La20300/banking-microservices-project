@@ -15,8 +15,6 @@ public class Transaction {
     private UUID transactionId;
     private UUID accountId;
     private BigDecimal amount;
-    private String type;
     private String description;
     private LocalDateTime timestamp;
-    private BigDecimal currentBalance;
 }

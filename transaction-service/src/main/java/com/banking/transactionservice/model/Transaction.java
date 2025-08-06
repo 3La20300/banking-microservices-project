@@ -38,9 +38,9 @@ public class Transaction {
     private TransactionStatus status=TransactionStatus.INITIATED;
 
     public enum TransactionStatus {
-        INITIATED,
-        SUCCESS,
-        FAILED
+        INITIATED, //0
+        SUCCESS, //1
+        FAILED //2
     }
 
     @Column(nullable = false)

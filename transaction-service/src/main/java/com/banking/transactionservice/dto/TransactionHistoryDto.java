@@ -21,6 +21,6 @@ public class TransactionHistoryDto {
     private BigDecimal amount;
     private String description; // Optional description of the transaction
     private LocalDateTime timestamp; // ISO 8601 format
-    private BigDecimal currentBalance; // Current balance after the transaction
+    // Removed type and currentBalance fields as they're not needed
 
 }

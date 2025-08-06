@@ -1,0 +1,27 @@
+
+
+-Create container:
+docker-compose -f "docker-compose 2.yml" up -d
+
+-To Stop:
+docker-compose -f "docker-compose 2.yml" down
+
+To Run:
+docker start container_name
+
+
+-Get Database :
+docker ps
+
+docker exec -it <container_name_or_id> psql -U <postgres_user>
+
+\l
+OR
+SELECT datname FROM pg_database WHERE datistemplate = false;
+
+\q: exit
+
+-To show all relations (tables, views, sequences):
+
+	\d
+	

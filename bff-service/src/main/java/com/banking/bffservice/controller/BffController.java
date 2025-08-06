@@ -1,7 +1,7 @@
 // BffController.java
 package com.banking.bffservice.controller;
 
-import com.banking.bffservice.dto.response.DashboardResponse;
+import com.banking.bffservice.dto.response.ErrorResponseDto;
 import com.banking.bffservice.service.BffService;
 import com.banking.bffservice.service.KafkaLoggingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,24 +39,37 @@ public class BffController {
     }
 
     @GetMapping("/dashboard/{userId}")
-    public Mono<ResponseEntity<DashboardResponse>> getDashboard(
+    public Mono<ResponseEntity<Object>> getDashboard(
             @PathVariable @NotNull(message = "User ID is required") UUID userId,
             HttpServletRequest request) {
 
         logger.info("Received dashboard request for userId: {}", userId);
 
-        // Log the request
-//        kafkaLoggingService.logRequest(userId, request.getRequestURI());
-
         return bffService.getDashboard(userId)
-                .map(dashboard -> {
-                    // Log the response
-//                    kafkaLoggingService.logResponse(dashboard, request.getRequestURI());
-                    return ResponseEntity.ok(dashboard);
+                .map(dashboard -> ResponseEntity.ok().body((Object)dashboard))
+                .onErrorResume(error -> {
+                    logger.error("Error processing dashboard request for userId: {}", userId, error);
+
+                    // Create a meaningful error response with appropriate status code
+                    HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+                    String errorMessage = error.getMessage();
+
+                    // Determine appropriate status code based on error type
+                    if (errorMessage != null && errorMessage.contains("Resource not found:")) {
+                        status = HttpStatus.NOT_FOUND;
+                    }
+
+                    // Create error response
+                    ErrorResponseDto errorResponse = new ErrorResponseDto();
+//                    errorResponse.put("timestamp", LocalDateTime.now());
+                    errorResponse.setStatus(status.value());
+                    errorResponse.setError(status.getReasonPhrase());
+                    errorResponse.setMessage(errorMessage);
+//                    errorResponse.put("path", request.getRequestURI());
+
+                    return Mono.just(ResponseEntity.status(status).body((Object)errorResponse));
                 })
-                .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
-                .doOnSuccess(response -> logger.info("Dashboard request completed for userId: {}", userId))
-                .doOnError(error -> logger.error("Dashboard request failed for userId: {}", userId, error));
+                .doOnSuccess(response -> logger.info("Dashboard request completed for userId: {}", userId));
     }
 
 //    @PostMapping("/transactions/transfer/initiation")

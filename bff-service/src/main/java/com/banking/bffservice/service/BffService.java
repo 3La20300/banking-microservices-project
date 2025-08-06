@@ -30,7 +30,10 @@ public class BffService {
         logger.info("Building dashboard for userId: {}", userId);
 
         // Step 1: Get user profile
-        Mono<UserProfile> userProfileMono = externalServiceClient.getUserProfile(userId);
+        Mono<UserProfile> userProfileMono = externalServiceClient.getUserProfile(userId)
+                .switchIfEmpty(Mono.error(new RuntimeException("User profile not found for userId: " + userId)))
+                .doOnError(error -> logger.error("Error fetching user profile for userId: {}", userId, error));
+
 
         // Step 2: Get user accounts
         Mono<List<Account>> accountsMono = externalServiceClient.getUserAccounts(userId);
